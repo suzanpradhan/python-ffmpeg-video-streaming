@@ -276,6 +276,27 @@ A path can also be passed to save a copy of files to your local machine.
 hls.output('/var/media/hls.m3u8', clouds=save_to_s3)
 ```
 
+#### To Firebase Storage
+
+```python
+from ffmpeg_streaming import Formats, CloudManager, FS
+
+os.environ["CREDENTIALS_PATH"] = 'YOUR DOWNLOADED CREDENTIALS FILE (JSON)'
+os.environ["STORAGE_BUCKET"] = 'YOUR FIREBASE STORAGE PATH (without gs://)'
+# if you are on windows, the path should be like: "C:\\User\\username\\Desktop\\[YOUR-CREDENTIALS].json"
+
+fs = FS()
+
+save_to_fs = CloudManager(filename="hls.m3u8").add(fs, folder = "folders/folder")
+# A filename can also be passed to the CloudManager class to change the filename(e.x. CloudManager(filename="hls.m3u8")
+
+video = ffmpeg_streaming.input('/var/media/video.mp4')
+
+hls = video.hls(Formats.h264())
+hls.auto_generate_representations()
+hls.output(clouds=save_to_fs)
+``` 
+
 Visit **[this page](https://video.aminyazdanpanah.com/python/start/clouds?r=save)** to see some examples of saving files to **[Amazon S3](https://aws.amazon.com/s3)**, **[Google Cloud Storage](https://console.cloud.google.com/storage)**, **[Microsoft Azure Storage](https://azure.microsoft.com/en-us/features/storage-explorer/)**, and a custom cloud. 
 
 **NOTE:** This option is only valid for **[VOD](https://en.wikipedia.org/wiki/Video_on_demand)** (it does not support live streaming).

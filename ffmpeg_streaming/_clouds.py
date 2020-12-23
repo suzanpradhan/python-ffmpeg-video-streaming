@@ -16,6 +16,7 @@ import logging
 import tempfile
 from os import listdir
 from os.path import isfile, join, basename
+import os
 
 
 class Clouds(abc.ABC):
@@ -84,6 +85,64 @@ class S3(Clouds):
             raise RuntimeError(e)
 
         return filename.name
+
+class FS(Clouds):
+    bucket = None
+
+    def __init__(self, **options):
+        try:
+            from google.cloud import storage
+            from firebase_admin import credentials, initialize_app, storage
+        except ImportError as e:
+            raise ImportError("No specified import name! make sure that you have installed the package via pip:\n\n"
+                              "pip install google-cloud-storage"
+                              "pip install firebase"
+                              "pip install firebase_admin")
+        if os.getenv("CREDENTIALS_PATH") == None or os.getenv("STORAGE_BUCKET") == None:
+            raise ValueError("Make sure you have added CREDENTIALS_PATH and STORAGE_BUCKET in yout os env.")
+        cred = credentials.Certificate(os.getenv("CREDENTIALS_PATH"))
+        initialize_app(cred, {'storageBucket': os.getenv("STORAGE_BUCKET")})
+        FS.bucket = storage.bucket()
+
+    def upload_directory(self, directory, **options):
+        folderPath = ''
+        folder = options.pop('folder', '')
+        if folder != '' or folder != None:
+            folderPath = folder + "/"
+        files = [f for f in listdir(directory) if isfile(join(directory, f))]
+        print("Uploading...")
+        for file in files:
+            print(file)
+            if file.endswith(".m3u8"):
+                with open(join(directory, file).replace("\\", "/"), "r+") as m3u8_file_read:
+                    lines = m3u8_file_read.readlines()
+                    m3u8_file_read.readlines().clear()
+                    m3u8_file_read.close()
+                    with open(join(directory, file).replace("\\", "/"), "w") as m3u8_file_write:
+                        for i in range(len(lines)):
+                            if not lines[i].startswith("#"):
+                                lines[i] = "https://storage.googleapis.com/" + os.getenv("STORAGE_BUCKET") + "/" + \
+                                           folderPath + lines[i].replace("\n", "") + "?alt=media" + "\n"
+                        m3u8_file_write.writelines(lines)
+                        m3u8_file_write.close()
+            blob = FS.bucket.blob(join(folder, file).replace("\\", "/"), **options)
+            blob.upload_from_filename(join(directory, file))
+            blob.make_public()
+        print("Uploaded!")
+
+    def download(self, filename=None, **options):
+        object_name = options.pop('object_name', None)
+
+        if object_name is None:
+            raise ValueError('You should pass an object name')
+
+        if filename is None:
+            with tempfile.NamedTemporaryFile(prefix=basename(object_name), delete=False) as tmp:
+                filename = tmp.name
+
+        blob = FS.bucket.get_blob(object_name, **options)
+        blob.download_to_filename(filename)
+        return filename
 
 
 class GCS(Clouds):
