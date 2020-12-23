@@ -263,6 +263,7 @@ __all__ = [
     'Clouds',
     'CloudManager',
     'S3',
+    'FS',
     'GCS',
     'MAS'
 ]
