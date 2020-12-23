@@ -37,11 +37,11 @@ This package uses the **[FFmpeg](https://ffmpeg.org)** to package media content 
 ## Installation
 Install the package via **[pip](https://pypi.org/project/pip/)**:
 ``` bash
-pip install python-ffmpeg-video-streaming
+pip install git+https://github.com/suzanpradhan/python-ffmpeg-video-streaming
 ```
 Alternatively, add the dependency directly to your `requirements.txt` file:
 ``` txt
-python-ffmpeg-video-streaming>=0.1
+git+https://github.com/suzanpradhan/python-ffmpeg-video-streaming>=0.1
 ```
 
 ## Quickstart
